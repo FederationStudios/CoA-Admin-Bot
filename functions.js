@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 // eslint-disable-next-line no-unused-vars
-const { Client, EmbedBuilder, Interaction, ActionRow, ButtonComponent, SelectMenuComponent, SelectMenuInteraction } = require('discord.js');
+const { Client, EmbedBuilder, Interaction, ActionRow, ButtonComponent, SelectMenuComponent, SelectMenuInteraction, ComponentType, ActionRowBuilder, ButtonStyle, ButtonBuilder,  } = require('discord.js');
 // eslint-disable-next-line no-unused-vars
 const { APIMessageSelectMenuInteractionData } = require('discord-api-types/v10');
 const config = require('./config.json');
@@ -282,6 +282,160 @@ module.exports = {
       }
     }
     return object;
+  },
+
+  /**
+ * @param {interaction} interaction
+ * @param {embeds} embeds
+ */
+  paginationEmbed: async function (interaction, embeds) {
+    let allbuttons = new ActionRowBuilder().addComponents([
+      new ButtonBuilder().setStyle(ButtonStyle.Secondary).setCustomId("1").setLabel("◀"),
+      new ButtonBuilder().setStyle(ButtonStyle.Secondary).setCustomId("2").setLabel("❌"),
+      new ButtonBuilder().setStyle(ButtonStyle.Secondary).setCustomId("3").setLabel("▶"),
+    ]);
+    if (embeds.length === 1) {
+      if (interaction.deferred) {
+        return interaction.followUp({
+          embeds: [embeds[0]],
+        });
+      } else {
+        return interaction.reply({
+          embeds: [embeds[0]],
+          fetchReply: true,
+        });
+      }
+    }
+
+    embeds = embeds.map((embed, index) => {
+      return embed.setFooter({
+        text: `Page ${index + 1}/${embeds.length}`,
+        iconURL: interaction.guild.iconURL({ dynamic: true }),
+      });
+    });
+
+    let sendMsg;
+    if (interaction.deferred) {
+      sendMsg = await interaction.followUp({
+        embeds: [embeds[0]],
+        components: [allbuttons],
+      });
+    } else {
+      sendMsg = await interaction.reply({
+        embeds: [embeds[0]],
+        components: [allbuttons],
+      });
+    }
+
+    let filter = (m) => m.member.id === interaction.member.id;
+
+    const collector = await sendMsg.createMessageComponentCollector({
+      filter: filter,
+      time: 30000,
+    });
+    let currentPage = 0;
+    collector.on("collect", async (b) => {
+      if (b.isButton()) {
+        await b.deferUpdate().catch((e) => null);
+        // page first
+        switch (b.customId) {
+          case "1":
+            {
+              if (currentPage != 0) {
+                currentPage -= 1;
+                await sendMsg
+                  .edit({
+                    embeds: [embeds[currentPage]],
+                    components: [allbuttons],
+                  })
+                  .catch((e) => null);
+              } else {
+                currentPage = embeds.length - 1;
+                await sendMsg
+                  .edit({
+                    embeds: [embeds[currentPage]],
+                    components: [allbuttons],
+                  })
+                  .catch((e) => null);
+              }
+            }
+            break;
+          case "2":
+            {
+              allbuttons.components.forEach((btn) => btn.setDisabled(true));
+              await sendMsg
+                .edit({
+                  embeds: [embeds[currentPage]],
+                  components: [allbuttons],
+                })
+                .catch((e) => null);
+            }
+            break;
+          case "3":
+            {
+              if (currentPage < embeds.length - 1) {
+                currentPage++;
+                await sendMsg
+                  .edit({
+                    embeds: [embeds[currentPage]],
+                    components: [allbuttons],
+                  })
+                  .catch((e) => null);
+              } else {
+                currentPage = 0;
+                await sendMsg
+                  .edit({
+                    embeds: [embeds[currentPage]],
+                    components: [allbuttons],
+                  })
+                  .catch((e) => null);
+              }
+            }
+            break;
+          default:
+            break;
+        }
+      }
+    });
+
+    collector.on("end", async () => {
+      allbuttons.components.forEach((btn) => btn.setDisabled(true));
+      await sendMsg
+        .edit({
+          embeds: [embeds[currentPage]],
+          components: [allbuttons],
+        })
+        .catch((e) => null);
+    });
+  },
+
+  /**
+   * @description Returns the full payload from a Roblox endpoint that returns an object like the following {data:{whatever: "whatever"}}
+   * @param {String} url URL to fetch from
+   * @param {Object} options Options to pass to node-fetch
+   * @returns {{success:false,error:string}|{success:true,payload:Object}}
+   */
+  paginationResponses: async function (url, options) {
+    const resp = await fetch(url, options)
+      .then(res => res.json());
+    if (resp.errors) return { success: false, error: resp.errors[0].message };
+
+    const rawPayloads = [resp];
+    let cursor = resp.nextPageCursor;
+    while (cursor) {
+      const newResp = await fetch(`${url}&cursor=${cursor}`, options)
+        .then(res => res.json());
+      rawPayloads.push(newResp);
+      cursor = newResp.nextPageCursor;
+    }
+
+    // Merge all the payloads into one
+    const payload = rawPayloads.reduce((acc, cur) => {
+      acc.data = acc.data.concat(cur.data);
+      return acc;
+    });
+
+    return { success: true, payload };
   }
-    
+
 };
