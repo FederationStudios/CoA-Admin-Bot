@@ -1,8 +1,9 @@
 const { SlashCommandBuilder, Client, CommandInteraction } = require('discord.js');
-const BackupMessage = require('../../DBModels/case_list'); // Adjust the path as necessary
-
+const case_list = require('../../DBModels/case_list'); // Adjust the path as necessary
 
 module.exports = {
+  name: 'clear_database',
+  description: '[Restricted Command]',
   data: new SlashCommandBuilder()
     .setName('clear_database')
     .setDescription('Clear all backup messages from the database'),
@@ -11,7 +12,7 @@ module.exports = {
    * @param {CommandInteraction} interaction
    */
   async run(client, interaction) {
-    const yourUserId = '342982972473081856'; // Replace with your actual user ID
+    const yourUserId = '584249826292531200'; // Replace with your actual user ID
 
     // Check if the user is you
     if (interaction.user.id !== yourUserId) {
@@ -20,10 +21,9 @@ module.exports = {
 
     try {
       // Remove all documents from the collection
-      await BackupMessage.deleteMany({});
+      await case_list.deleteMany({});
       interaction.reply({ content: 'Database cleared successfully!', ephemeral: true });
     } catch (error) {
-      console.error('Error clearing database:', error);
       interaction.reply({ content: 'An error occurred while clearing the database.', ephemeral: true });
     }
   },

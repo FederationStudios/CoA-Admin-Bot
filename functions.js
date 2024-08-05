@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */
+ 
 // eslint-disable-next-line no-unused-vars
 const { Client, EmbedBuilder, Interaction, ActionRow, ButtonComponent, SelectMenuComponent, SelectMenuInteraction, ComponentType, ActionRowBuilder, ButtonStyle, ButtonBuilder,  } = require('discord.js');
 // eslint-disable-next-line no-unused-vars
@@ -408,7 +408,6 @@ module.exports = {
         .catch((e) => null);
     });
   },
-
   /**
    * @description Returns the full payload from a Roblox endpoint that returns an object like the following {data:{whatever: "whatever"}}
    * @param {String} url URL to fetch from

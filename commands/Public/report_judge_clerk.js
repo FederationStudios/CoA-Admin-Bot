@@ -2,10 +2,10 @@ const { Client, CommandInteraction, SlashCommandBuilder, ModalBuilder, ActionRow
 
 module.exports = {
   name: "report_judge_clerk",
-  description: "To submit the report form against a judge or clerk",
+  description: "To submit a report against a clerk or judge which are employed in coa",
   data: new SlashCommandBuilder()
     .setName("report_judge_clerk")
-    .setDescription("To submit the report form against a judge or clerk"),
+    .setDescription("To submit a report against a clerk or judge which are employed in coa"),
   /**
    * @param {Client} client
    * @param {CommandInteraction} interaction

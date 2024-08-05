@@ -45,7 +45,7 @@ module.exports = {
         }
   
         await interaction.user.send({ content: "Your case has been filed. Thank you for your submission.", embeds: [embed] });
-        await interaction.editReply({ content: "Submission filed! 📤", embeds: [embed], ephemeral: false });
+        await interaction.editReply({ content: "Submission filed! 📤", embeds: [embed], ephemeral: true });
   
       } catch (error) {
         console.error('Error handling modal submission:', error);

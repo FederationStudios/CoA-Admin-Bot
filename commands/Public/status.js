@@ -4,10 +4,10 @@ const case_list = require('../../DBModels/case_list');
 
 module.exports = {
     name: 'status',
-    description: 'Check your case status',
+    description: 'To check your appeal status.',
     data: new SlashCommandBuilder()
         .setName('status')
-        .setDescription('Check your case status'),
+        .setDescription('To check your appeal status.'),
     /**
      * @param {Client} client
      * @param {CommandInteraction} interaction

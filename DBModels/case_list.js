@@ -6,6 +6,10 @@ const caseSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    roblox_username: {
+        type: String,
+        required: true
+    },
     discord_username: {
         type: String,
         required: true
@@ -36,7 +40,7 @@ const caseSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['PENDING', 'DENIED', 'PENDING APPROVAL FROM COA COMMAND', 'ON HOLD', 'AWAITING ASSIGNMENT', 'COMPLETED'],
+        enum: ['PENDING', 'DENIED', 'PENDING APPROVAL FROM COA COMMAND', 'ON HOLD', 'AWAITING ASSIGNMENT', 'ASSIGNED', 'COMPLETED'],
         default: 'PENDING'
     },
     judges_assigned: {
@@ -50,6 +54,15 @@ const caseSchema = new mongoose.Schema({
     submitted_date: {
         type: Date,
         default: Date.now
+    },
+    decline_reason: {
+        type: String,
+        default: 'N/A'
+    },
+    branch: {
+        type: String,
+        enum: ['Military', 'Government', 'Both', 'Other'],
+        required: true
     }
 });
 

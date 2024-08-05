@@ -1,20 +1,19 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { Client, CommandInteraction, EmbedBuilder, CommandInteractionOptionResolver } = require('discord.js');
+const { Client, CommandInteraction, EmbedBuilder, ComponentType } = require('discord.js');
 const case_list = require('../../DBModels/case_list.js');
 const { paginationEmbed, interactionEmbed } = require('../../functions.js'); // Import paginationEmbed
 
 module.exports = {
-    name: 'view_case',
+    name: 'view_appeal',
     description: 'View all cases with details',
     data: new SlashCommandBuilder()
-        .setName('view_case')
+        .setName('view_appeal')
         .setDescription('Fetch and view all case details'),
     /**
      * @param {Client} client
      * @param {CommandInteraction} interaction
-     * @param {CommandInteractionOptionResolver} options
      */
-    async run(client, interaction, options) {
+    async run(client, interaction) {
         await interaction.deferReply();
 
         try {
@@ -57,7 +56,7 @@ module.exports = {
             paginationEmbed(interaction, embeds);
         } catch (error) {
             console.error('Error fetching cases:', error);
-            return interactionEmbed(3, "[ERR-ARGS]", `An error occured while fetching the records`, interaction, client, [true, 15]);
+            return interactionEmbed(3, "[ERR-ARGS]", "An error occurred while fetching the records", interaction, client, [true, 15]);
         }
     }
 };

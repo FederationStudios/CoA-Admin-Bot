@@ -1,17 +1,17 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Client, CommandInteraction, CommandInteractionOptionResolver } = require('discord.js');
-const { interactionEmbed } = require("../../functions");
+const { interactionEmbed } = require("../../functions")
 const case_list = require('../../DBModels/case_list');
 
 module.exports = {
-    name: 'accept_case',
-    description: 'Put a case on awaiting assignment status',
+    name: 'delete_appeal',
+    description: 'Delete a case from the database',
     data: new SlashCommandBuilder()
-        .setName('accept_case')
-        .setDescription('Put a case on awaiting assignment status')
+        .setName('delete_appeal')
+        .setDescription('Delete a case from the database')
         .addStringOption(option => 
             option.setName('case_id')
-                .setDescription('The ID of the case to put on awaiting assignment')
+                .setDescription('The ID of the case to delete')
                 .setRequired(true)),
     /**
      * @param {Client} client
@@ -19,7 +19,7 @@ module.exports = {
      * @param {CommandInteractionOptionResolver} options
      */
     async run(client, interaction, options) {
-        // Check if the user has appropriate permissions (CoA Leadership)
+        
         const requiredRoles = ['1264055683884646482', '1008740829017424053'];
 
         const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
@@ -30,25 +30,16 @@ module.exports = {
         const caseId = interaction.options.getString('case_id');
 
         try {
-            // Find the case and update its status
-            const result = await case_list.findOneAndUpdate(
-                { case_id: caseId },
-                { 
-                    $set: { 
-                        status: 'AWAITING ASSIGNMENT'
-                    }
-                },
-                { new: true } // Return the updated document
-            );
+            const result = await case_list.deleteOne({ case_id: caseId });
 
-            if (!result) {
+            if (result.deletedCount === 0) {
                 return interaction.reply({ content: `No case found with ID ${caseId}.`, ephemeral: true });
             }
 
-            await interaction.reply({ content: `The case with ID ${caseId} has been put on awaiting assignment status.`, ephemeral: true });
+            await interaction.reply({ content: `The case with ID ${caseId} has been deleted successfully.`, ephemeral: true });
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: 'An error occurred while accepting the case.', ephemeral: true });
+            await interaction.reply({ content: 'An error occurred while deleting the case.', ephemeral: true });
         }
     }
 };

@@ -41,11 +41,12 @@ module.exports = {
                     { name: "Case ID allotted to you", value: `${caseData.case_id}`, inline: false }
                 )
                 .setFooter({
-                    text: `CoA - Secure Transmission | Filed at ${new Date().toLocaleTimeString()} ${new Date().toString().match(/GMT([+-]\d{2})(\d{2})/)[0]}`,
+                    text: `United Baltic Imperial District - St. Petersburg, Judiciary Headquarters | Filed at ${new Date().toLocaleTimeString()} ${new Date().toString().match(/GMT([+-]\d{2})(\d{2})/)[0]}`,
                     iconURL: client.user.displayAvatarURL()
                 })
                 .setTimestamp(new Date())
-                .setColor('Aqua');
+                .setColor("6e0f0f")
+                .setImage('https://media.discordapp.net/attachments/1101207990918463600/1227756827543076955/COAPropo2.png?ex=66b009a6&is=66aeb826&hm=1fa2928f6d86f2320aff3f08a9ac3ee04610231534242aeae8c289dd6aa39db9&format=webp&quality=lossless&width=1177&height=662&');
 
             await user.send({ content: "⚠️ Details below is your case ID. Do not share! ⚠️", embeds: [embed] });
 

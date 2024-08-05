@@ -1,16 +1,17 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Client, CommandInteraction, CommandInteractionOptionResolver } = require('discord.js');
+const { interactionEmbed } = require("../../functions");
 const case_list = require('../../DBModels/case_list');
 
 module.exports = {
-    name: 'decline_case',
-    description: 'Decline a case by changing its status to DENIED',
+    name: 'accept_appeal',
+    description: 'Put a case on awaiting assignment status',
     data: new SlashCommandBuilder()
-        .setName('decline_case')
-        .setDescription('Decline a case by changing its status to DENIED')
+        .setName('accept_appeal')
+        .setDescription('Put a case on awaiting assignment status')
         .addStringOption(option => 
             option.setName('case_id')
-                .setDescription('The ID of the case to decline')
+                .setDescription('The ID of the case to put on awaiting assignment')
                 .setRequired(true)),
     /**
      * @param {Client} client
@@ -18,7 +19,7 @@ module.exports = {
      * @param {CommandInteractionOptionResolver} options
      */
     async run(client, interaction, options) {
-        // Check if the user has appropriate permissions (Clerk or CoA Leadership)
+        // Check if the user has appropriate permissions (CoA Leadership)
         const requiredRoles = ['1264055683884646482', '1008740829017424053'];
 
         const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
@@ -32,7 +33,11 @@ module.exports = {
             // Find the case and update its status
             const result = await case_list.findOneAndUpdate(
                 { case_id: caseId },
-                { $set: { status: 'DENIED' } },
+                { 
+                    $set: { 
+                        status: 'AWAITING ASSIGNMENT'
+                    }
+                },
                 { new: true } // Return the updated document
             );
 
@@ -40,10 +45,10 @@ module.exports = {
                 return interaction.reply({ content: `No case found with ID ${caseId}.`, ephemeral: true });
             }
 
-            await interaction.reply({ content: `The case with ID ${caseId} has been declined successfully.`, ephemeral: true });
+            await interaction.reply({ content: `The case with ID ${caseId} has been put on awaiting assignment status.`, ephemeral: true });
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: 'An error occurred while declining the case.', ephemeral: true });
+            await interaction.reply({ content: 'An error occurred while accepting the case.', ephemeral: true });
         }
     }
 };

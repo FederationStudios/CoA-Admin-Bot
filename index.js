@@ -1,11 +1,12 @@
 /* eslint-disable no-undef */
-const { Client, Collection, GatewayIntentBits, MessageEmbed, ActivityType } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, ActivityType } = require('discord.js');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v10');
 const { interactionEmbed, toConsole } = require('./functions.js');
 const config = require('./config.json');
 const rest = new REST({ version: 10 }).setToken(config.bot.token);
 const fs = require('node:fs');
+const path = require('node:path'); // Add this line
 const wait = require('node:util').promisify(setTimeout);
 const mongoose = require("mongoose");
 let ready = false;
@@ -15,7 +16,9 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildMessages
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.MessageContent
     ]
 });
 const slashCommands = [];
@@ -114,13 +117,36 @@ client.on('ready', async () => {
     // End of bot status
 });
 
+// Load events
+const eventsPath = path.join(__dirname, 'events');
+const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
+
+for (const file of eventFiles) {
+    const filePath = path.join(eventsPath, file);
+    const event = require(filePath);
+    if (event.once) {
+        client.once(event.name, (...args) => event.execute(...args, client));
+    } else {
+        client.on(event.name, (...args) => event.execute(...args, client));
+    }
+}
+
+
+//#region Interactions handling
 client.on('interactionCreate', async (interaction) => {
+    // Check if the interaction is in a guild
     if (!interaction.inGuild()) {
         return interactionEmbed(4, '[WARN-NODM]', '', interaction, client, [true, 10]);
     }
+    
+    // Check if the bot is ready
     if (!ready) {
         return interactionEmbed(4, '', 'The bot is starting up, please wait', interaction, client, [true, 10]);
     }
+
+    // Fetch the log channel
+    const logChannelId = config.discord.logChannel; // Add this to your config.json
+    const logChannel = await client.channels.fetch(logChannelId).catch(console.error);
 
     if (interaction.isCommand()) {
         const command = client.commands.get(interaction.commandName);
@@ -133,11 +159,36 @@ client.on('interactionCreate', async (interaction) => {
             }
         }
 
+        let optionsUsed = '';
+        if (interaction.options.data.length > 0) {
+            optionsUsed = interaction.options.data.map(opt => {
+                return `${opt.name}: ${opt.value}`;
+            }).join(', ');
+        } else {
+            optionsUsed = 'No options used';
+        }
+
+        let dmedUser = 'No user DM\'d';
+        if (interaction.commandName === 'dmcaseid') {
+        const userId = interaction.options.get('user').value;
+        const user = await client.users.fetch(userId).catch(() => null);
+        if (user) {
+        dmedUser = `<@${user.id}>`;
+        } else {
+        dmedUser = `User with ID ${userId}`;
+        }
+      }
+
         if (command) {
             command.run(client, interaction, interaction.options).catch(e => {
                 interaction.editReply('Something went wrong while executing the command. Please report this to the developer');
                 toConsole(e.stack, `command.run(${command.name})`, client);
             });
+
+            // Log the command execution
+            if (logChannel) {
+                logChannel.send(`Command \`${interaction.commandName}\` was run by <@${interaction.user.id}> in ${interaction.guild.name}.\nOptions used: ${optionsUsed}\nDM Status: ${dmedUser}`);
+            }
         }
 
         await wait(1e4);
@@ -151,28 +202,52 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     if (interaction.isModalSubmit()) {
-        // modals need to have the same name as the commands they are started with
         const modalName = interaction.customId;
         const modal = client.modals.get(modalName);
         if (modal) {
-          modal.run(client, interaction, interaction.fields);
+            modal.run(client, interaction, interaction.fields);
         } else {
-          await interaction.reply("Modal not found.");
-          console.warn(`No modal found for: ${modalName}`);
-          toConsole(`No modal found for: ${modalName}`,new Error().stack,client);
+            await interaction.reply("Modal not found.");
+            console.warn(`No modal found for: ${modalName}`);
+            toConsole(`No modal found for: ${modalName}`, new Error().stack, client);
         }
-      }
-      if(interaction.isMessageContextMenuCommand())
-      {
+    }
+
+    if (interaction.isMessageContextMenuCommand()) {
         const command = client.commands.get(interaction.commandName);
         command.run(client, interaction);
-    
-      }
-      if(interaction.isAutocomplete()){
+    }
+
+    if (interaction.isAutocomplete()) {
         const command = client.commands.get(interaction.commandName);
         await command.autocomplete(interaction);
-      }
-    });
+    }
+});
+//Interactions handling End
+
+// Add this block to handle direct messages
+client.on('messageCreate', async (message) => {
+    // Check if the message is a direct message and not from a bot
+    if (message.channel.type === 'DM' && !message.author.bot) {
+        // Log the user's information
+        console.log(`Received a DM from ${message.author.tag} (${message.author.id}): ${message.content}`);
+        
+        // Optional: You can also send a confirmation reply to the user
+        try {
+            await message.reply('Your message has been received.');
+        } catch (error) {
+            console.error('Failed to send a DM reply:', error);
+        }
+
+        // Optional: Log the DM to a specific channel
+        const logChannelId = config.discord.logChannel; // Add this to your config.json
+        const logChannel = await client.channels.fetch(logChannelId).catch(console.error);
+
+        if (logChannel) {
+            logChannel.send(`Received a DM from ${message.author.tag} (${message.author.id}): ${message.content}`);
+        }
+    }
+});
 
 client.login(config.bot.token);
 

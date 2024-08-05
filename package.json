@@ -14,9 +14,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "suman9725",
   "license": "ISC",
-  "description": "",
+  "description": "A bot for Cout of Appeals administration",
   "devDependencies": {
     "@eslint/js": "^9.8.0",
     "eslint": "^9.8.0",

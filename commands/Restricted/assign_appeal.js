@@ -3,10 +3,10 @@ const { Client, CommandInteraction, CommandInteractionOptionResolver } = require
 const case_list = require('../../DBModels/case_list');
 
 module.exports = {
-    name: 'assign_case',
+    name: 'assign_appeal',
     description: 'Assign judges to a case or update the existing assignment',
     data: new SlashCommandBuilder()
-        .setName('assign_case')
+        .setName('assign_appeal')
         .setDescription('Assign judges to a case or update the existing assignment')
         .addStringOption(option => 
             option.setName('case_id')
