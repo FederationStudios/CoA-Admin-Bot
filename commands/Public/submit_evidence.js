@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, Client, CommandInteraction, CommandInteractionOptionResolver } = require('discord.js');
 
+
 module.exports = {
     name: "submit_evidence",
     description: "Submit evidence collected and send it to the specified channel.",

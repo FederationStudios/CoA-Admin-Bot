@@ -32,9 +32,6 @@ module.exports = {
 
    
 
-    // Log the fields to check their structure
-    console.log(publicFields);
-
     // Add all fields to the embed
     embed.addFields(publicFields);
 
