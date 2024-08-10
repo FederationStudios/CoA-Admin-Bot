@@ -14,7 +14,6 @@ module.exports = {
    * @param {CommandInteraction} interaction
    */
   run: async (client, interaction) => {
-    await interaction.deferReply();
 
     const publicFiles = fs.readdirSync(join(__dirname, "..", "Public")).filter(file => file.endsWith(".js"));
 
@@ -46,6 +45,6 @@ module.exports = {
       iconURL: interaction.user.displayAvatarURL(),
     });
 
-    interaction.editReply({ embeds: [embed] });
+    interaction.reply({ embeds: [embed] });
   },
 };
