@@ -35,7 +35,7 @@ module.exports = {
      */
     async run(client, interaction, options) {
       
-        const requiredRoles = ['1264055683884646482', '1008740829017424053', '1270040254891692152'];
+        const requiredRoles = ['1264055683884646482', '1008740829017424053', '1270040254891692152', '1245870875077640203'];
         const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
 
         if (!hasRole) {
