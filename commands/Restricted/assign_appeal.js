@@ -26,12 +26,13 @@ module.exports = {
      * @param {CommandInteractionOptionResolver} options
      */
     async run(client, interaction, options) {
-        // Check if the user has appropriate permissions (CoA Leadership)
-        const requiredRoles = ['1264055683884646482', '1008740829017424053'];
-        const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
-        if (!hasRole) {
-          return interactionEmbed(3, "[ERR-UPRM]", `You do not have permission to run this command, buddy.`, interaction, client, [true, 30]);
-        }
+       // Check if the user has appropriate permissions (CoA Leadership)
+       const requiredRoles = ['1019717342227333192', '1083095989323313242', '1083096092356391043', '1270040254891692152'];
+
+       const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
+       if (!hasRole) {
+         return interactionEmbed(3, "[ERR-UPRM]", `You do not have permission to run this command, buddy.`, interaction, client, [true, 30]);
+       }
 
         const caseId = interaction.options.getString('case_id');
         const judgesAssigned = interaction.options.getBoolean('judges_assigned');

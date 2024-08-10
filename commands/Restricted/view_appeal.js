@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Client, CommandInteraction, EmbedBuilder, ComponentType } = require('discord.js');
 const case_list = require('../../DBModels/case_list.js');
-const { paginationEmbed, interactionEmbed } = require('../../functions.js'); // Import paginationEmbed
+const { interactionEmbed, paginationEmbed } = require('../../functions.js'); // Import paginationEmbed
 
 module.exports = {
     name: 'view_appeal',
@@ -16,12 +16,22 @@ module.exports = {
     async run(client, interaction) {
         await interaction.deferReply();
 
+        // Check if the user has appropriate permissions (CoA Leadership)
+        const requiredRoles = ['1019717342227333192', '1083095989323313242', '1083096092356391043'];
+
+        const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
+        if (!hasRole) {
+          return interactionEmbed(3, "[ERR-UPRM]", `You do not have permission to run this command, buddy.`, interaction, client, [true, 30]);
+        }
+
         try {
             // Fetch all cases from the database
             const cases = await case_list.find();
-            const pageSize = 5; // Number of cases per page
+
+            const pageSize = 5;
 
             if (!cases || cases.length === 0) {
+
                 return interactionEmbed(3, "No cases found", "", interaction, client, [true, 15]);
             }
 
@@ -31,7 +41,7 @@ module.exports = {
                 const casesPage = cases.slice(i, i + pageSize);
                 const embed = new EmbedBuilder()
                     .setTitle('Case List')
-                    .setColor('Aqua')
+                    .setColor('Red')
                     .setFooter({
                         text: `Page ${Math.floor(i / pageSize) + 1}/${Math.ceil(cases.length / pageSize)}`,
                         iconURL: interaction.guild.iconURL({ dynamic: true })
@@ -49,13 +59,13 @@ module.exports = {
                     }
                 });
 
-                embeds.push(embed);
+                embeds.push(embed)
             }
 
             // Use paginationEmbed function to handle embeds with pagination
-            paginationEmbed(interaction, embeds);
+            await paginationEmbed(interaction, embeds);
         } catch (error) {
-            console.error('Error fetching cases:', error);
+
             return interactionEmbed(3, "[ERR-ARGS]", "An error occurred while fetching the records", interaction, client, [true, 15]);
         }
     }

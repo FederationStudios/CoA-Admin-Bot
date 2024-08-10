@@ -17,11 +17,12 @@ module.exports = {
      * @param {CommandInteraction} interaction
      */
     async run(client, interaction) {
-        const requiredRoles = ['1264055683884646482', '1008740829017424053'];
+        // Check if the user has appropriate permissions (CoA Leadership)
+        const requiredRoles = ['1019717342227333192', '1083095989323313242', '1270040254891692152', '1083096092356391043'];
 
         const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
         if (!hasRole) {
-            return interactionEmbed(3, "[ERR-UPRM]", `You do not have permission to run this command, buddy.`, interaction, client, [true, 30]);
+          return interactionEmbed(3, "[ERR-UPRM]", `You do not have permission to run this command, buddy.`, interaction, client, [true, 30]);
         }
 
         const user = interaction.options.getUser("user");

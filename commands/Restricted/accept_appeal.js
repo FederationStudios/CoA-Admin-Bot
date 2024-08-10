@@ -20,7 +20,7 @@ module.exports = {
      */
     async run(client, interaction, options) {
         // Check if the user has appropriate permissions (CoA Leadership)
-        const requiredRoles = ['1264055683884646482', '1008740829017424053'];
+        const requiredRoles = ['1019717342227333192', '1083095989323313242', '1083096092356391043', '1270040254891692152'];
 
         const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
         if (!hasRole) {

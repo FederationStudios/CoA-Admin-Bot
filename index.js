@@ -145,7 +145,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     // Fetch the log channel
-    const logChannelId = config.discord.logChannel; // Add this to your config.json
+    const logChannelId = config.discord.commandUsage; // Add this to your config.json
     const logChannel = await client.channels.fetch(logChannelId).catch(console.error);
 
     if (interaction.isCommand()) {

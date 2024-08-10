@@ -293,7 +293,7 @@ module.exports = {
       new ButtonBuilder().setStyle(ButtonStyle.Secondary).setCustomId("1").setLabel("◀"),
       new ButtonBuilder().setStyle(ButtonStyle.Secondary).setCustomId("2").setLabel("❌"),
       new ButtonBuilder().setStyle(ButtonStyle.Secondary).setCustomId("3").setLabel("▶"),
-    ]);
+    ]); 
     if (embeds.length === 1) {
       if (interaction.deferred) {
         return interaction.followUp({

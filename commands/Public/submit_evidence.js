@@ -16,8 +16,16 @@ module.exports = {
      * @param {CommandInteractionOptionResolver} options
      */
     async run(client, interaction, options) {
+
+        const requiredRoles = ['1264055683884646482', '1008740829017424053', '1270040254891692152'];
+        const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
+
+        if (!hasRole) {
+            return interaction.reply({ content: "You do not have permission to run this command.", ephemeral: true });
+        }
+
         const evidence = options.getString("evidence");
-        const channelId = '1265982268162183178'; // Replace with your actual channel ID
+        const channelId = '1270046126070042798'; // Replace with your actual channel ID
 
         const channel = await client.channels.fetch(channelId).catch(() => null);
         if (!channel || !channel.isText()) {

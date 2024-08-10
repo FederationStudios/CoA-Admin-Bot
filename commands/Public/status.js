@@ -25,7 +25,7 @@ module.exports = {
 
             // Create an array to hold the embed messages
             const embeds = cases.map(c => new EmbedBuilder()
-                .setColor("Blurple")
+                .setColor("Red")
                 .setTitle(`Case ID: ${c.case_id}`)
                 .addFields(
                     { name: 'Offense', value: c.offense, inline: true },
