@@ -36,24 +36,6 @@ async function main() {
     }
 }
 
-// Load modals
-client.modals = new Map();
-const modals = fs.readdirSync('./modals').filter(file => file.endsWith('.js'));
-console.info(`[MDL-LOAD] Loading modals, expecting ${modals.length} modals`);
-for (const file of modals) {
-  try {
-    console.info(`[MDL-LOAD] Loading file ${file}`);
-    const modal = require(`./modals/${file}`);
-    if (modal.name) {
-      console.info(`[MDL-LOAD] Loaded: ${file}`);
-      client.modals.set(modal.name, modal);
-    }
-  } catch (e) {
-    console.warn(`[MDL-LOAD] Unloaded: ${file}`);
-    console.warn(`[MDL-LOAD] ${e}`);
-  }
-}
-console.info('[MDL-LOAD] Loaded modals');
 
 // Load commands function
 const loadCommands = (dir, collection) => {
