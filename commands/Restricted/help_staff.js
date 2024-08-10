@@ -32,7 +32,7 @@ module.exports = {
       .setTitle("Commands");
 
       for (const file of secretFiles) {
-        const command = require(join(__dirname, "..", "restricted", file));
+        const command = require(join(__dirname, "..", "Restricted", file));
         embed.addFields({
           name: command.name, value: command.description ? command.description : "No description for this command."
         });
