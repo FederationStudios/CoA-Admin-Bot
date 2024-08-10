@@ -1,6 +1,7 @@
 
 // eslint-disable-next-line no-unused-vars
 const { Client, SlashCommandBuilder, CommandInteraction, EmbedBuilder, Colors } = require("discord.js");
+const { interactionEmbed } = require("../../functions");
 const fs = require("fs");
 const {join} = require("path");
 

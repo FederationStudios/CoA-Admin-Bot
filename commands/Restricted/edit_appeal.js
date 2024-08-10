@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, Client, CommandInteraction, CommandInteractionOptionResolver } = require('discord.js');
 const case_list = require('../../DBModels/case_list'); // Adjust the path to your case model
+const { interactionEmbed } = require("../../functions");
 
 module.exports = {
     name: "edit_appeal",

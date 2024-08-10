@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Client, CommandInteraction, EmbedBuilder, CommandInteractionOptionResolver } = require('discord.js');
 const Case = require('../../DBModels/case_list');
+const { interactionEmbed } = require("../../functions");
 
 module.exports = {
     name: "decline_appeal",
