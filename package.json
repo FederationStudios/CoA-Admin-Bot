@@ -2,7 +2,7 @@
   "dependencies": {
     "discord.js": "^14.15.3",
     "mongoose": "^8.5.2",
-    "noblox.js": "^5.0.1",
+    "noblox.js": "^6.0.2",
     "node-fetch": "^3.3.2",
     "whatwg-url": "^14.0.0"
   },
