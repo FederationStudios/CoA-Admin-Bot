@@ -26,7 +26,7 @@ module.exports = {
      * @param {CommandInteraction} interaction
      * @param {CommandInteractionOptionResolver} options
      */
-    async run(client, interaction, options) {
+    run: async(client, interaction, options) => {
        // Check if the user has appropriate permissions (CoA Leadership)
        const requiredRoles = ['1019717342227333192', '1083095989323313242', '1083096092356391043', '1270040254891692152'];
 
@@ -45,6 +45,7 @@ module.exports = {
                 { case_id: caseId },
                 { 
                     $set: { 
+                        status: 'ASSIGNED',
                         judges_assigned: judgesAssigned,
                         judges_username: judgesAssigned ? judgesUsername : 'N/A'
                     }

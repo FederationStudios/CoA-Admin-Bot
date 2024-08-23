@@ -31,7 +31,7 @@ module.exports = {
      * @param {Client} client
      * @param {CommandInteraction} interaction
      */
-    run: async (client, interaction) => {
+    run: async(client, interaction, options) => {
         try {
             // Defer the reply immediately to avoid interaction timeout
             await interaction.deferReply({ ephemeral: true });

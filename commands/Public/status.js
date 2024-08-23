@@ -12,7 +12,7 @@ module.exports = {
      * @param {Client} client
      * @param {CommandInteraction} interaction
      */
-    async run(client, interaction) {
+    run: async(client, interaction, options) => {
         const discordUsername = interaction.user.tag; // Get the user's Discord username (e.g., User#1234)
 
         try {

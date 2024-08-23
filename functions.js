@@ -1,28 +1,43 @@
- 
-// eslint-disable-next-line no-unused-vars
-const { Client, EmbedBuilder, Interaction, ActionRow, ButtonComponent, SelectMenuComponent, SelectMenuInteraction, ComponentType, ActionRowBuilder, ButtonStyle, ButtonBuilder,  } = require('discord.js');
-// eslint-disable-next-line no-unused-vars
-const { APIMessageSelectMenuInteractionData } = require('discord-api-types/v10');
-const config = require('./config.json');
+/* eslint-disable no-unused-vars */
+const { Client, EmbedBuilder, Interaction, ActionRow, ButtonComponent, SelectMenuComponent, SelectMenuInteraction, SelectMenuOptionBuilder, ComponentType, ActionRowBuilder, ButtonStyle, ButtonBuilder, User } = require("discord.js");
+const { default: fetch } = require("node-fetch");
+const config = require("./config.json");
+const fs = require("fs");
+const path = require("path");
+const {promisify} = require("util");
 
 const errors = {
-    '[SQL-ERR]': 'An error has occurred while trying to execute a MySQL query',
-    '[ERR-CLD]': 'You are on cooldown!',
-    '[ERR-UPRM]': 'You do not have the proper permissions to execute this command',
-    '[ERR-CNF]': 'Case not found enter a valid case ID',
-    '[ERR-RSUM]': "Error in getting the roblox group summary",
-    '[ERR-BPRM]': 'I do not have the proper permissions to execute this command',
-    '[ERR-ARGS]': 'You have not supplied the correct parameters. Please check again',
-    '[ERR-UNK]': 'I can\'t tell why an issue spawned. Please report this to a developer',
-    '[ERR-MISS]': 'I cannot find the information in the system',
-    '[WARN-NODM]': 'Sorry, but all slash commands only work in a server, not DMs',
-    '[WARN-DM]': 'The user is not accepting and DMS',
-    '[WARN-CMD]': 'The requested slash command was not found',
-    '[INFO-DEV]': 'This command is in development. This should not be expected to work'
+  "[SQL-ERR]": "An error has occurred while communicating with the database",
+  "[ERR-CLD]": "You are on cooldown!",
+  "[ERR-UPRM]": "You do not have the proper permissions to execute this command",
+  "[ERR-BPRM]": "This bot does not have proper permissions to execute this command",
+  "[ERR-ARGS]": "You have not supplied the correct parameters. Please check again",
+  "[ERR-UNK]": "An unknwon error occurred. Please report this to a developer",
+  "[ERR-MISS]": "The requested information wasn't found",
+  "[WARN-NODM]": "This command isn't available in Direct Messages. Please run this in a server",
+  "[WARN-CMD]": "The requested slash command was not found. Please refresh your Discord client and try again",
+  "[INFO-DEV]": "This command is in development. This should not be expected to work"
 };
 
-module.exports = {
-    /**
+  /**
+   * @typedef RobloxGroupUserData
+   * @prop {RobloxGroupGroupData} group
+   * @prop {RobloxGroupRoleData} role
+   */
+  /**
+   * @typedef {Object} RobloxGroupGroupData
+   * @prop {string} id Group ID
+   * @prop {string} name Name of the group
+   * @prop {number} memberCount Member count of the group
+   */
+  /**
+   * @typedef {Object} RobloxGroupRoleData
+   * @prop {number} id Numeric identifier of the role
+   * @prop {string} name Name of the role
+   * @prop {string} rank Rank of the role (0-255)
+   */
+
+  /**
    * @description Sends a message to the console
    * @param {String} message [REQUIRED] The message to send to the console
    * @param {String} source [REQUIRED] Source of the message
@@ -31,27 +46,34 @@ module.exports = {
    * @example toConsole(`Hello, World!`, `functions.js 12:15`, client);
    * @example toConsole(`Published a ban`, `ban.js 14:35`, client);
    */
-    toConsole: async (message, source, client) => {
-        if(!message || !source || !client) return console.error(`One or more of the required parameters are missing.\n\n> message: ${message}\n> source: ${source}\n> client: ${client}`);
-        const channel = await client.channels.cache.get(config.discord.logChannel);
-        if(!channel) return console.warn('[WARN] toConsole called but bot cannot find config.discord.logChannel', message, source);
+  const toConsole = async (message, source, client) => {
+    if (!message || !source || !client) return console.error(`One or more of the required parameters are missing.\n\n> message: ${message}\n> source: ${source}\n> client: ${client}`);
+    const channel = await client.channels.cache.get(config.discord.logChannel);
+    if (!channel) return console.warn("[WARN] toConsole called but bot cannot find config.discord.logChannel", message, source);
+    console.log(message);
+    source = new RegExp(/(at.+\(.+\)|at .+[\\/].+\.js:.+)/).exec(source)[0];
+    // eslint-disable-next-line no-useless-escape
+    source = source.replace("at ", "").replace(/\(?.+[\\/]/, "").replace(")", "").replace(":", "\:");
+    console.debug(source);
 
-        channel.send(`Incoming message from ${source} at <t:${Math.floor(Date.now()/1000)}:F>`);
-        channel.send({ embeds: [
-            new EmbedBuilder({
-                title: 'Message to Console',
-                color: 0xFF000,
-                description: `${message}`,
-                footer: {
-                    text: `Source: ${source} @ ${new Date().toLocaleTimeString()} ${new Date().toString().match(/GMT([+-]\d{2})(\d{2})/)[0]}`
-                },
-                timestamp: new Date()
-            })
-        ]});
+    channel.send(`Incoming message from ${source} at <t:${Math.floor(Date.now() / 1000)}:F>`);
+    channel.send({
+      embeds: [
+        new EmbedBuilder({
+          title: "Message to Console",
+          color: 0xFF0000,
+          description: message || "",
+          footer: {
+            text: `Source: ${source} @ ${new Date().toLocaleTimeString()} ${new Date().toString().match(/GMT([+-]\d{2})(\d{2})/)[0]}`
+          },
+          timestamp: new Date()
+        })
+      ]
+    });
 
-        return null;
-    },
-    /**
+    return null;
+  };
+  /**
    * @description Replies with a EmbedBuilder to the Interaction
    * @param {Number} type 1- Sucessful, 2- Warning, 3- Error, 4- Information
    * @param {String} content The information to state
@@ -61,60 +83,56 @@ module.exports = {
    * @param {Array<Boolean, Number>} remove Whether to delete the message and the specified timeout in seconds
    * @example interactionEmbed(1, `Removed ${removed} roles`, ``, interaction, client, [false, 0])
    * @example interactionEmbed(3, `[ERR-UPRM]`, `Missing: \`Manage Messages\``, interaction, client, [true, 15])
-   * @returns {null} 
+   * @returns {null}
    */
-    interactionEmbed: async function(type, content, expected, interaction, client, remove) {
-        if(!type || typeof content != 'string' || expected === undefined || !interaction || !client || !remove || remove.length != 2) throw new SyntaxError(`One or more of the required parameters are missing in [interactionEmbed]\n\n> ${type}\n> ${content}\n> ${expected}\n> ${interaction}\n> ${client}`);
-        if(!interaction.deferred) await interaction.deferReply();
-        const embed = new EmbedBuilder();
+  const interactionEmbed = async function (type, content, expected, interaction, client, remove) {
+    if (!type || typeof content != "string" || expected === undefined || !interaction || !client || !remove || remove.length != 2) throw new SyntaxError(`One or more of the required parameters are missing in [interactionEmbed]\n\n> ${type}\n> ${content}\n> ${expected}\n> ${interaction}\n> ${client}`);
+    if (!interaction.deferred) await interaction.deferReply();
+    const embed = new EmbedBuilder();
 
-        switch(type) {
-        case 1:
-            embed
-                .setTitle('Success')
-                .setAuthor({ name: interaction.user.username, iconURL: interaction.user.avatarURL({ dynamic: true, size: 4096 }) })
-                .setColor('Blurple')
-                .setDescription(!errors[content] ? expected : `${errors[content]}\n> ${expected}`)
-                .setFooter({ text: 'The operation was completed successfully with no errors' })
-                .setTimestamp();
-  
-            break;
-        case 2:
-            embed
-                .setTitle('Warning')
-                .setAuthor({ name: interaction.user.username, iconURL: interaction.user.avatarURL({ dynamic: true, size: 4096 }) })
-                .setColor('Orange')
-                .setDescription(!errors[content] ? expected : `${errors[content]}\n> ${expected}`)
-                .setFooter({ text: 'The operation was completed successfully with a minor error' })
-                .setTimestamp();
-  
-            break;
-        case 3:
-            embed
-                .setTitle('Error')
-                .setAuthor({ name: interaction.user.username, iconURL: interaction.user.avatarURL({ dynamic: true, size: 4096 }) })
-                .setColor('Red')
-                .setDescription(!errors[content] ? `I don't understand the error "${content}" but was expecting ${expected}. Please report this to the support server!` : `${errors[content]}\n> ${expected}`)
-                .setFooter({ text: 'The operation failed to complete due to an error' })
-                .setTimestamp();
-  
-            break;
-        case 4:
-            embed
-                .setTitle('Information')
-                .setAuthor({ name: interaction.user.username, iconURL: interaction.user.avatarURL({ dynamic: true, size: 4096 }) })
-                .setColor('Blurple')
-                .setDescription(!errors[content] ? expected : `${errors[content]}\n> ${expected}`)
-                .setFooter({ text: 'The operation is pending completion' })
-                .setTimestamp();
-  
-            break;
-        }
-        await interaction.editReply({ content: '​', embeds: [embed] });
-        if(remove[0]) setTimeout(() => { interaction.deleteReply(); }, remove[1]*1000);
-        return null;
-    },
-    /**
+    switch (type) {
+      case 1:
+        embed
+          .setTitle("Success")
+          .setAuthor({ name: interaction.user.username, iconURL: interaction.user.avatarURL({ dynamic: true, size: 4096 }) })
+          .setColor(0x5865F2)
+          .setDescription(!errors[content] ? expected : `${errors[content]}\n> ${expected}`)
+          .setTimestamp();
+
+        break;
+      case 2:
+        embed
+          .setTitle("Warning")
+          .setAuthor({ name: interaction.user.username, iconURL: interaction.user.avatarURL({ dynamic: true, size: 4096 }) })
+          .setColor(0xFEE75C)
+          .setDescription(!errors[content] ? expected : `${errors[content]}\n> ${expected}`)
+          .setTimestamp();
+
+        break;
+      case 3:
+        embed
+          .setTitle("Error")
+          .setAuthor({ name: interaction.user.username, iconURL: interaction.user.avatarURL({ dynamic: true, size: 4096 }) })
+          .setColor(0xFF0000)
+          .setDescription(!errors[content] ? `I don't understand the error "${content}" but was expecting ${expected}. Please report this to the support server!` : `${errors[content]}\n> ${expected}`)
+          .setTimestamp();
+
+        break;
+      case 4:
+        embed
+          .setTitle("Information")
+          .setAuthor({ name: interaction.user.username, iconURL: interaction.user.avatarURL({ dynamic: true, size: 4096 }) })
+          .setColor(0x5865F2)
+          .setDescription(!errors[content] ? expected : `${errors[content]}\n> ${expected}`)
+          .setTimestamp();
+
+        break;
+    }
+    await interaction.editReply({ content: "​", embeds: [embed] });
+    if (remove[0]) setTimeout(() => { interaction.deleteReply(); }, remove[1] * 1000);
+    return null;
+  };
+  /**
     * Sends buttons to a user and awaits the response
     * @param {Interaction} interaction Interaction object
     * @param {Number} time Seconds for which the buttons are valid
@@ -124,176 +142,162 @@ module.exports = {
     * @example awaitButtons(interaction, 15, [button1, button2], `Select a button`, true);
     * @returns {ButtonComponent|null} The button the user clicked or null if no button was clicked
     */
-    awaitButtons: async function (interaction, time, buttons, content, remove) {
-        if(!interaction || !time || !buttons || remove === null) return new SyntaxError(`One of the following values is not fulfilled:\n> interaction: ${interaction}\n> time: ${time}\n> buttons: ${buttons}\n> remove: ${remove}`);
-        content = content ?? 'Please select an option';
-    
-        // Create a filter
-        const filter = i => {
-            return i.user.id === interaction.user.id;
-        };
-        // Convert the time to milliseconds
-        time *= 1000;
-        // Create a ActionRow and add the buttons
-        const row = new ActionRow();
-        row.addComponents(buttons);
-        // Send a follow-up message with the buttons and await a response
-        const message = await interaction.followUp({ content: content, components: [row] });
-        const res = await message
-            .awaitMessageComponent({ filter, componentType: 'BUTTON', time: time, errors: ['time'] })
-            .catch(() => { return null; });
-        // Disable the buttons on row
-        for(const button of row.components) {
-            button.setDisabled(true);
-        }
-        // Step 5: Cleanup
-        setTimeout(() => {
-            if(message != undefined && !message.deleted && remove && res != null) message.delete();
-        }, 1500);
-        await message.edit({ content: content, components: [] });
-        return res;
-    },
-    /**
+  const awaitButtons = async function (interaction, time, buttons, content, remove) {
+    if (!interaction || !time || !buttons || remove === null) return new SyntaxError(`One of the following values is not fulfilled:\n> interaction: ${interaction}\n> time: ${time}\n> buttons: ${buttons}\n> remove: ${remove}`);
+    content = content ?? "Please select an option";
+
+    // Create a filter
+    const filter = i => {
+      return i.user.id === interaction.user.id;
+    };
+    // Convert the time to milliseconds
+    time *= 1000;
+    // Create a ActionRow and add the buttons
+    const row = new ActionRow();
+    row.addComponents(buttons);
+    // Send a follow-up message with the buttons and await a response
+    const message = await interaction.followUp({ content: content, components: [row] });
+    const res = await message
+      .awaitMessageComponent({ filter, componentType: ComponentType.Button, time: time, errors: ["time"] })
+      .catch(() => { return null; });
+    // Disable the buttons on row
+    for (const button of row.components) {
+      button.setDisabled(true);
+    }
+    // Step 5: Cleanup
+    setTimeout(() => {
+      if (message != undefined && remove && res != null) message.delete();
+    }, 1500);
+    await message.edit({ content: content, components: [] });
+    return res;
+  };
+  /**
    * Send a SelectMenuComponent to a user and awaits the response
    * @param {Interaction} interaction Interaction object
    * @param {Number} time Seconds for which the menu is valid
    * @param {Number[]} values [min, max] The amount of values that can be selected
-   * @param {APIMessageSelectMenuInteractionData|APIMessageSelectMenuInteractionData[]} options The options for the menu
+   * @param {SelectMenuOptionBuilder|SelectMenuOptionBuilder[]} options The options for the menu
    * @param {String|null} content The content to display, can be blank
    * @param {Boolean} remove Delete the message after the time expires
    * @example awaitMenu(interaction, 15, [menu], `Select an option`, true);
    * @returns {SelectMenuInteraction|null} The menu the user interacted with or null if nothing was selected
    */
-    awaitMenu: async function (interaction, time, values, options, content, remove) {
+  const awaitMenu = async function (interaction, time, values, options, content, remove) {
     // Step 0: Checks
-        if(!interaction || !time || !values || !options || remove === null) return new SyntaxError(`One of the following values is not fulfilled:\n> interaction: ${interaction}\n> time: ${time}\n> values: ${values}\n> options: ${options}\n> remove: ${remove}`);
-        content = content ?? 'Please select an option';
+    if (!interaction || !time || !values || !options || remove === null) return new SyntaxError(`One of the following values is not fulfilled:\n> interaction: ${interaction}\n> time: ${time}\n> values: ${values}\n> options: ${options}\n> remove: ${remove}`);
+    content = content ?? "Please select an option";
 
-        // Step 1: Setup
-        const filter = i => {
-            return i.user.id === interaction.user.id;
-        };
-        time *= 1000;
+    // Step 1: Setup
+    const filter = i => {
+      return i.user.id === interaction.user.id;
+    };
+    time *= 1000;
 
-        // Step 2: Creation
-        const row = new ActionRow();
-        const menu = new SelectMenuComponent({
-            minValues: values[0],
-            maxValues: values[1],
-            customId: 'await-menu'
-        });
-        menu.addOptions(options);
-        row.addComponents(menu);
+    // Step 2: Creation
+    const row = new ActionRow();
+    const menu = new SelectMenuComponent({
+      minValues: values[0],
+      maxValues: values[1],
+      customId: "await-menu"
+    });
+    menu.addOptions(options);
+    row.addComponents(menu);
 
-        // Step 3: Execution
-        const message = await interaction.followUp({ content: content, components: [row] });
-        const res = await message
-            .awaitMessageComponent({ filter, componentType: 'SELECT_MENU', time: time, errors: ['time'] })
-            .catch(() => { return null; });
+    // Step 3: Execution
+    const message = await interaction.followUp({ content: content, components: [row] });
+    const res = await message
+      .awaitMessageComponent({ filter, componentType: ComponentType.SelectMenu, time: time, errors: ["time"] })
+      .catch(() => { return null; });
 
-        // Step 4: Processing
-        row.components[0].setDisabled(true);
-        // eslint-disable-next-line no-useless-escape
-        await message.edit({ content: res === null ? '\:lock: Cancelled' : content, components: [row] });
+    // Step 4: Processing
+    row.components[0].setDisabled(true);
+    // eslint-disable-next-line no-useless-escape
+    await message.edit({ content: res === null ? "\:lock: Cancelled" : content, components: [row] });
 
-        // Step 5: Cleanup
-        setTimeout(() => {
-            if(message != undefined && !message.deleted && remove && res != null) message.delete();
-        }, 1500);
-        await message.edit({ content: content, components: [] });
-        return res;
-    },
-    /**
-   * @param {String} time 
+    // Step 5: Cleanup
+    setTimeout(() => {
+      if (message != undefined && remove && res != null) message.delete();
+    }, 1500);
+    await message.edit({ content: content, components: [] });
+    return res;
+  };
+  /**
+   * @async
+   * @param {string} username Roblox username
+   * @param {number} groupId Group ID to fetch
+   * @returns {{success: boolean, error: string}|RobloxGroupUserData}
+   */
+  const getGroup = async (username, groupId) => {
+    if (!groupId) return { success: false, error: "No group ID provided" };
+    if (isNaN(username)) {
+      const user = await fetch(`https://api.roblox.com/users/get-by-username?username=${username}`)
+        .then(res => res.json());
+
+      if (user.success) return { success: false, error: `Interpreted \`${username}\` as Username but no user was found` };
+      username = user.Id;
+    } else {
+      const user = await fetch(`https://api.roblox.com/users/${username}`)
+        .then(res => res.json());
+      if (user.success) return { success: false, error: `Interpreted \`${username}\` as ID but no user was found` };
+    }
+    const group = await fetch(`https://groups.roblox.com/v2/users/${username}/groups/roles`)
+      .then(res => res.json());
+    if (group.errorMessage) return { success: false, error: `No group found with ID \`${groupId}\`` };
+    const role = group.data.find(g => g.group.id === groupId);
+    if (!role) return { success: false, error: "User is not in the group specified" };
+    return { success: true, data: role };
+  };
+  /**
+ * @async
+ * @param {number|string} user Discord user ID
+ * @param {Client} client Discord client
+ * @returns {{success: false, error?: string}|{success: true, roblox: string, username: string}}
+ */
+  const getRowifi = async (user, client) => {
+    if (!user) return { success: false, error: "No username provided" };
+    const userData = await fetch(`https://api.rowifi.xyz/v2/guilds/${config.mainServer}/members/${user}`, { headers: { "Authorization": `Bot ${config.rowifiApiKey}` } })
+      .then(res => {
+        if (!res.ok) {
+          if (res.status !== 404) module.exports.toConsole(`Rowifi API returned ${res.status} ${res.statusText}`, new Error().stack, client);
+          return { success: false };
+        } else
+          return res.json();
+      });
+    if (userData.success !== undefined) return { success: false, error: "Rowifi failed to return any data! (If you are signed in with Rowifi, report this to a developer)" };
+
+    const roblox = await fetch(`https://users.roblox.com/v1/users/${userData.roblox_id}`)
+      .then(res => res.json());
+    if (roblox.errors) return { success: false, error: "Roblox ID does not exist" };
+
+    return { success: true, roblox: userData.roblox_id.toString(), username: roblox.name };
+  };
+
+  /**
+   * @param {String} time
    * @returns {Number|"NaN"}
    */
-    parseTime: function (time) {
-        let duration = 0;
-        if(!time.match(/[1-9]{1,3}[dhms]/g)) return 'NaN';
+  const parseTime = function (time) {
+    let duration = 0;
+    if (!time.match(/[1-9]{1,3}[dhms]/g)) return "NaN";
 
-        for(const period of time.match(/[1-9]{1,3}[dhms]/g)) {
-            const [amount, unit] = period.match(/^(\d+)([dhms])$/).slice(1);
-            duration += unit === 'd' ? amount * 24 * 60 * 60 : unit === 'h' ? amount * 60 * 60 : unit === 'm' ? amount * 60 : amount;
-        }
-
-        return duration;
-    },
-
-    /**
-   * @description Searches for a user
-   * @param {Snowflake|String|Number} query The user to search for
-   * @param {Number} type 1- Roblox, 2- Discord
-   * @param {Client} client Client object
-   * @returns {{error: boolean, message: string}|{roblox:{id: number, username: string},discord:{id: Snowflake, username: string}}} 
-   */
-  getUser: async function (query, type, client) {
-    const object = {roblox: {}, discord: {}};
-    let res;
-    let json = {};
-    if(type === 1) {
-      // If it's a string, get the user ID from Roblox
-      if(isNaN(query)) {
-        // Get the user by username
-        res = await fetch(`https://api.roblox.com/users/get-by-username?username=${query}`);
-        json = await res.json();
-        if(json.errors) return {error: true, message: `Interpreted \`${query}\` as a user name and found no user`};
-      }
-      // Get the user's information from Roblox using the ID
-      res = await fetch(`https://api.roblox.com/users/${json.Id === undefined ? query : json.Id}`);
-      if(res.status === 404) return {error: true, message: `Interpreted \`${query}\` as a user name and found no user`};
-      json = await res.json();
-      if(json.errors) return {error: true, message: `Interpreted \`${query}\` as a user ID and found no user`};
-      object.roblox.username = json.Username;
-      object.roblox.id = json.Id;
-
-      // Get their information from the database, if it exists
-      const dbUser = await client.models.User.findAll({ where: { rblxId: String(json.Id) } });
-      if(dbUser.length > 0) {
-        await client.users.fetch(dbUser[0].discId, { force: true })
-          .then(user => {
-            object.discord.username = user.username;
-            object.discord.id = user.id;
-          })
-          .catch(() => {
-            object.discord.username = undefined;
-            object.discord.id = undefined;
-          });
-      } else {
-        object.discord.username = null;
-        object.discord.id = null;
-      }
-    } else if(type === 2) {
-      // Fetch the user from Discord
-      const user = await client.users.fetch(query, { force: true });
-      if(!user) return {error: true, message: `Interpreted \`${query}\` as a discord ID and found no user`};
-      object.discord.username = user.username;
-      object.discord.id = user.id;
-
-      // Get them from the database
-      const dbUser = await client.models.User.findAll({ where: { discId: user.id } });
-      if(dbUser.length > 0) {
-        res = await fetch(`https://api.roblox.com/users/${dbUser[0].rblxId}`);
-        json = await res.json();
-        object.roblox.username = json.Username;
-        object.roblox.id = json.Id;
-      } else {
-        object.roblox.username = undefined;
-        object.roblox.id = undefined;
-      }
+    for (const period of time.match(/[1-9]{1,3}[dhms]/g)) {
+      const [amount, unit] = period.match(/^(\d+)([dhms])$/).slice(1);
+      duration += unit === "d" ? amount * 24 * 60 * 60 : unit === "h" ? amount * 60 * 60 : unit === "m" ? amount * 60 : amount;
     }
-    return object;
-  },
+
+    return duration;
+  };
 
   /**
  * @param {interaction} interaction
  * @param {embeds} embeds
  */
-  paginationEmbed: async function (interaction, embeds) {
+  const paginationEmbed = async function (interaction, embeds) {
     let allbuttons = new ActionRowBuilder().addComponents([
       new ButtonBuilder().setStyle(ButtonStyle.Secondary).setCustomId("1").setLabel("◀"),
       new ButtonBuilder().setStyle(ButtonStyle.Secondary).setCustomId("2").setLabel("❌"),
       new ButtonBuilder().setStyle(ButtonStyle.Secondary).setCustomId("3").setLabel("▶"),
-    ]); 
+    ]);
     if (embeds.length === 1) {
       if (interaction.deferred) {
         return interaction.followUp({
@@ -407,14 +411,15 @@ module.exports = {
         })
         .catch((e) => null);
     });
-  },
+  };
+
   /**
    * @description Returns the full payload from a Roblox endpoint that returns an object like the following {data:{whatever: "whatever"}}
    * @param {String} url URL to fetch from
    * @param {Object} options Options to pass to node-fetch
    * @returns {{success:false,error:string}|{success:true,payload:Object}}
    */
-  paginationResponses: async function (url, options) {
+  const paginationResponses = async function (url, options) {
     const resp = await fetch(url, options)
       .then(res => res.json());
     if (resp.errors) return { success: false, error: resp.errors[0].message };
@@ -435,6 +440,249 @@ module.exports = {
     });
 
     return { success: true, payload };
+  };
+  /**
+   * Retrieves group information for a user by their userId.
+   * @param {number} userId - The userId of the user.
+   * @param {number} groupId - The groupId of the group.
+   * @returns {{
+   *   success: boolean,
+   *   data?: { group: { id: number, name: string, memberCount: number, hasVerifiedBadge: boolean }, role: { id: number, name: string, rank: number } },
+   *   error?: string
+   * }} An object indicating the success or failure of the operation, along with relevant data or error message.
+   */
+  const getGroupByUserId = async function (userId, groupId) {
+    if (!groupId) return { success: false, error: "No group ID provided" };
+
+    // Check if userId is a number
+    if (isNaN(userId)) {
+      return { success: false, error: "User ID must be a number" };
+    }
+
+    const group = await fetch(`https://groups.roblox.com/v2/users/${userId}/groups/roles`)
+        .then(res => res.json());
+
+    if (group.errorMessage) return { success: false, error: `No group found with ID \`${groupId}\`` };
+
+    const role = group.data.find(g => g.group.id === groupId);
+
+    if (!role) return { success: false, error: "User is not in the group specified" };
+
+    return { success: true, data: role };
+  };
+  /**
+   * Extracts Discord user IDs from a given text.
+   * @param {string} text - The text to extract user IDs from.
+   * @returns {string[]} An array containing the extracted user IDs.
+   */
+  const extractIDs = function (text) {
+    const pattern = /<@(\d+)>/g;
+    const ids = [];
+    let match;
+
+    while ((match = pattern.exec(text))) {
+      ids.push(match[1]);
+    }
+
+    return ids;
+  };
+/**
+ * Fetches user information from Roblox API based on provided usernames.
+ * @param {string[]} usernames Array of usernames to fetch user information for.
+ * @returns {Promise<{
+ *     users: {
+ *         id: string,
+ *         username: string,
+ *         displayName: string
+ *     }[],
+ *     error: string|null,
+ *     success: boolean
+ * }>} Object containing user information, error message (if any), and success status.
+ */
+const fetchUserInformationFromUsernames = async (usernames) => {
+  try {
+    const response = await fetch("https://users.roblox.com/v1/usernames/users", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        usernames: usernames,
+        excludeBannedUsers: false
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.errors && data.errors.length > 0) {
+      const errorMessages = data.errors.map(error => {
+        const code = error.code || "Unknown";
+        const message = error.message || "Unknown error occurred.";
+        const userFacingMessage = error.userFacingMessage || "Unknown";
+        return `Code: ${code}. Message: ${message}. UserFacingMessage: ${userFacingMessage}`;
+      });
+
+      return {
+        users: [],
+        error: `Errors occurred: ${errorMessages.join("; ")}`,
+        success: false
+      };
+    }
+
+    return {
+      users: data.data.map(user => ({
+        id: user.id,
+        username: user.name,
+        displayName: user.displayName
+      })),
+      error: null,
+      success: true
+    };
+  } catch (error) {
+    console.error("Error fetching user information:", error);
+    return {
+      users: [],
+      error: `Failed to fetch user information. ${error}`,
+      success: false
+    };
+  }
+};
+
+  /**
+   * Returns an array of roblox info from inputted Roblox usernames and Discord mentions. Needs Rowifi
+   * @param input: string
+   * @param interaction: CommandInteraction
+   * @param client: Client
+   * @returns {Promise<{
+   *      users:
+   *      {
+   *        id: string,
+   *        username: string,
+   *        discord: User | null
+   *      }[]|null,
+   *      error: string|null,
+   *      success: boolean
+   * }>}
+   */
+  const getRobloxInfoFromDiscordMentionsOrRobloxUsernames = async function(input, interaction, client)
+  {
+
+    /**
+     * @type {{
+     *        id: string,
+     *        username: string,
+     *        discord: Object | null
+     *      }[]}
+     */
+    const result = [];
+
+    const exploded = input.split(" ");
+
+    const robloxUsernames = [];
+    const unresolvedUsers = [];
+
+    for (const explosion of exploded) {
+      // remove anything that is not a letter, number or underscore
+      let probableUser = explosion.trim().replace(/[^a-zA-Z0-9_]/g, "");
+
+      //check whether the string is a number or not
+      if (!isNaN(parseInt(probableUser))) {
+
+        // if probableUser is a number, check whether that's a Discord user
+        var member = null;
+        try{
+          member = await interaction.guild.members.fetch(probableUser);
+
+        } catch (e)
+        {
+          // if the number is not a discord user id, push it to unresolved users since it can be a roblox username (in the past, roblox usernames could be numbers only)
+          robloxUsernames.push(probableUser);
+        }
+
+        if(member) {
+          let rowifiProbableUserResult = await getRowifi(probableUser, client);
+          if (!rowifiProbableUserResult.success) {
+            return {success: false, users:[], error: `Seems like <@${probableUser}> is not verified with RoWifi or is not in the server. Ensure each subject is verified and in your server when requesting with Discord mentions. You can still use Roblox usernames regardless of being in the server/RoWifi verification \nError: ${rowifiProbableUserResult.error}`};
+
+          } else {
+            // if correctly resolved by RoWifi, push to the results
+            result.push({
+              id: `${rowifiProbableUserResult.roblox}`,
+              username: rowifiProbableUserResult.username,
+              discord: member.user
+            });
+          }
+        }
+
+
+      } else {
+        // if the input is not a number, push it to roblox usernames
+        robloxUsernames.push(probableUser);
+      }
+    }
+
+    const robloxUserObjectsResult = await fetchUserInformationFromUsernames(robloxUsernames);
+    if (!robloxUserObjectsResult.success) {
+      return {success: false, error: `Error occurred when processing Roblox usernames. Ensure correct usernames are provided. \nError: ${robloxUserObjectsResult.error}`, users: []};
+
+    }
+
+    robloxUserObjectsResult.users.forEach((user) => {
+      result.push({id: user.id.toString(), username: user.username, discord: null});
+    });
+
+
+    return {users: result, success: true, error: null};
+  };
+
+/**
+ * Retrieves the count of friends for a user by their userId.
+ * @param {string} userId - The userId of the user.
+ * @returns {{
+ *   success: boolean,
+ *   count?: number,
+ *   error?: string
+ * }} An object indicating the success or failure of the operation, along with relevant data or error message.
+ */
+const getFriendsCount = async function(userId) {
+  // Check if userId is a number
+  if (isNaN(userId)) {
+    return { success: false, error: "User ID must be a number" };
   }
 
+  try {
+    const response = await fetch(`https://friends.roblox.com/v1/users/${userId}/friends/count`);
+    const data = await response.json();
+
+    if (data.errors) {
+      return { success: false, error: data.errors[0].userFacingMessage || "Something went wrong" };
+    }
+
+    if (!data.count && data.count !== 0) {
+      return { success: false, error: "Count of friends not found in the response" };
+    }
+
+    return { success: true, count: data.count };
+  } catch (error) {
+    return { success: false, error: "Failed to fetch friends count: " + error.message };
+  }
+};
+
+
+
+module.exports = {
+  fetchUserInformationFromUsernames,
+  toConsole,
+  extractIDs,
+  awaitButtons,
+  awaitMenu,
+  getRowifi,
+  getGroup,
+  paginationEmbed,
+  paginationResponses,
+  parseTime,
+  getRobloxInfoFromDiscordMentionsOrRobloxUsernames,
+  getGroupByUserId,
+  getFriendsCount,
+  interactionEmbed
 };

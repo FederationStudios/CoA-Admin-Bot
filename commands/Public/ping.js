@@ -10,7 +10,7 @@ module.exports = {
    * @param {Client} client
    * @param {CommandInteraction} interaction
    */
-async run(client, interaction) {
+  run: async(client, interaction, options) => {
   await interaction.deferReply();
     const pings = [];
     const now = Date.now();

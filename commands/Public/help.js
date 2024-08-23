@@ -13,7 +13,7 @@ module.exports = {
    * @param {Client} client
    * @param {CommandInteraction} interaction
    */
-  run: async (client, interaction) => {
+  run: async(client, interaction, options) => {
 
     const publicFiles = fs.readdirSync(join(__dirname, "..", "Public")).filter(file => file.endsWith(".js"));
 

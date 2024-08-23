@@ -13,11 +13,11 @@ module.exports = {
      * @param {Client} client
      * @param {CommandInteraction} interaction
      */
-    async run(client, interaction) {
+    run: async(client, interaction, options) => {
         await interaction.deferReply();
 
         // Check if the user has appropriate permissions (CoA Leadership)
-        const requiredRoles = ['1019717342227333192', '1083095989323313242', '1083096092356391043'];
+        const requiredRoles = ['964465282120830986','1019717342227333192', '1083095989323313242', '1083096092356391043'];
 
         const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
         if (!hasRole) {

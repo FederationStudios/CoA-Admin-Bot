@@ -49,7 +49,7 @@ module.exports = {
      * @param {CommandInteraction} interaction
      * @param {CommandInteractionOptionResolver} options
      */
-    async run(client, interaction, options) {
+    run: async(client, interaction, options) => {
 
         // Check if the user has appropriate permissions (CoA Leadership)
         const requiredRoles = ['1019717342227333192', '984517042671599676', '1270040254891692152'];

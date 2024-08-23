@@ -16,7 +16,7 @@ module.exports = {
      * @param {CommandInteraction} interaction
      * @param {CommandInteractionOptionResolver} options
      */
-    async run(client, interaction, options) {
+    run: async(client, interaction, options) => {
 
         const requiredRoles = ['1264055683884646482', '1008740829017424053', '1270040254891692152'];
         const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
