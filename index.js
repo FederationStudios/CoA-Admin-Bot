@@ -52,8 +52,8 @@ client.once("ready", async () => {
     return commandsArray;
   };
 
-  const globalCommands = loadCommands(path.join(__dirname, "commands", "public"),"PUBLIC");
-  const staffCommands = loadCommands(path.join(__dirname, "commands", "restricted"), "STAFF");
+  const globalCommands = loadCommands(path.join(__dirname, "commands", "Public"),"PUBLIC");
+  const staffCommands = loadCommands(path.join(__dirname, "commands", "Restricted"), "STAFF");
 
   //Modals
   // const modals = fs.readdirSync("./modals").filter(file => file.endsWith(".js"));
