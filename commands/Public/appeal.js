@@ -81,7 +81,7 @@ module.exports = {
     
 
         // Send the embed to a specific channel
-        const targetChannel = client.channels.cache.get("1265982268162183178");
+        const targetChannel = client.channels.cache.get("1269981941214482463");
         if (targetChannel) {
             try {
                 await targetChannel.send({ content: `Incoming case incident report from ${interaction.user.tag} (${interaction.user.id})`, embeds: [embed] });
