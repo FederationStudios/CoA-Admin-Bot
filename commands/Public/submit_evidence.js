@@ -18,11 +18,12 @@ module.exports = {
      */
     run: async(client, interaction, options) => {
 
+        await interaction.deferReply({ephemeral:true});
         const requiredRoles = ['1264055683884646482', '1008740829017424053', '1270040254891692152', '1276746698022060083'];
         const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
 
         if (!hasRole) {
-            return interaction.reply({ content: "You do not have permission to run this command.", ephemeral: true });
+            return interaction.editReply({ content: "You do not have permission to run this command.", ephemeral: true });
         }
 
         const evidence = options.getString("evidence");
@@ -30,14 +31,14 @@ module.exports = {
 
         const channel = await client.channels.fetch(channelId).catch(() => null);
         if (!channel || !channel.isText()) {
-            return interaction.reply({ content: "Invalid channel ID provided.", ephemeral: true });
+            return interaction.editReply({ content: "Invalid channel ID provided.", ephemeral: true });
         }
 
         try {
             await channel.send({ content: `Evidence submitted:\n${evidence}` });
-            interaction.reply({ content: "Evidence submitted successfully!", ephemeral: true });
+            interaction.editReply({ content: "Evidence submitted successfully!", ephemeral: true });
         } catch (error) {
-            interaction.reply({ content: "An error occurred while submitting the evidence.", ephemeral: true });
+            interaction.editReply({ content: "An error occurred while submitting the evidence.", ephemeral: true });
         }
     }
 };
