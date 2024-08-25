@@ -65,7 +65,7 @@ module.exports = {
                     content: `Incoming case incident report from ${interaction.user.tag} (${interaction.user.id})`,
                     embeds: [embed]
                 });
-            } else {
+             } else {
                 console.error('Target channel not found.');
                 await interaction.editReply({
                     content: "Target channel not found. Please contact an administrator.",

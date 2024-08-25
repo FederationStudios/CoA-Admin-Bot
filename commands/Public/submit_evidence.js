@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, Client, CommandInteraction, CommandInteractionOptionResolver } = require('discord.js');
 
-
 module.exports = {
     name: "submit_evidence",
     description: "Submit evidence collected and send it to the specified channel.",
@@ -16,8 +15,8 @@ module.exports = {
      * @param {CommandInteraction} interaction
      * @param {CommandInteractionOptionResolver} options
      */
-    run: async(client, interaction, options) => {
-
+     run: async(client, interaction, options) => {
+        try{
         await interaction.deferReply({ephemeral:true});
         const requiredRoles = ['1264055683884646482', '1008740829017424053', '1270040254891692152', '1276746698022060083'];
         const hasRole = requiredRoles.some(roleId => interaction.member.roles.cache.has(roleId));
@@ -27,18 +26,28 @@ module.exports = {
         }
 
         const evidence = options.getString("evidence");
-        const channelId = '1270046126070042798'; // Replace with your actual channel ID
+        const targetChannel = client.channels.cache.get("1270046126070042798");
 
-        const channel = await client.channels.fetch(channelId).catch(() => null);
-        if (!channel || !channel.isText()) {
-            return interaction.editReply({ content: "Invalid channel ID provided.", ephemeral: true });
+        if(targetChannel)
+        {
+            await targetChannel.send({
+                content: `Incoming case submit eveidence from ${interaction.user.tag} (${interaction.user.id})\n${evidence}` 
+            })
         }
-
-        try {
-            await channel.send({ content: `Evidence submitted:\n${evidence}` });
-            interaction.editReply({ content: "Evidence submitted successfully!", ephemeral: true });
-        } catch (error) {
-            interaction.editReply({ content: "An error occurred while submitting the evidence.", ephemeral: true });
+            else {
+                console.error('Target channel not found.');
+                await interaction.editReply({
+                    content: "Target channel not found. Please contact an administrator.",
+                    ephemeral: true
+                });
+                return;
+            }
+        }catch(error){
+            console.error('Error handling slash command:', error);
+                await interaction.editReply({
+                    content: "There was an error processing your submission. Please try again later.",
+                    ephemeral: true
+                });
         }
     }
 };
