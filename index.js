@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 const { Client, GatewayIntentBits, InteractionType, ActivityType, Collection } = require("discord.js");
 const { ApplicationCommandOptionType } = require("discord-api-types/v10");
 const { interactionEmbed, toConsole } = require("./functions.js");

@@ -335,7 +335,7 @@ const errors = {
 
     const collector = await sendMsg.createMessageComponentCollector({
       filter: filter,
-      time: 30000,
+      time: 60000,
     });
     let currentPage = 0;
     collector.on("collect", async (b) => {
